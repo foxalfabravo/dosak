@@ -15,7 +15,7 @@ from argparse import RawDescriptionHelpFormatter
 
 from notesapi import NotesApiWrapper
 from toolbox import SetVerbosity,myLog
-from lotusscript import SetupNotesClient
+from lotusscript import SetupNotesClient,SwitchUser
 
 
 __all__ = []
@@ -103,6 +103,7 @@ def main(argv=None): # IGNORE:C0111
         parser = ArgumentParser(description="", formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument("-n", "--name",    dest="name", action="store", help="NSF/NTF to clean up]")
         parser.add_argument("-f", "--fulldir",    dest="directory", action="store", help="path to compile]")
+        parser.add_argument("-u", "--user",    dest="user",     action="store", help="user id short filename (relative to Notes/Data)")
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
 
         # Process arguments
@@ -111,8 +112,11 @@ def main(argv=None): # IGNORE:C0111
         SetVerbosity(args.verbose)
         myLog("Args are %s " % args)
 
+        if (args.user is not None):
+            SwitchUser(args.user)
+
         notesSession = SetupNotesClient(args.verbose)
-        notesapi.NotesInitExtended(sys.argv)
+        notesapi.NotesInitExtended(sys.argv)      
 
         if not (args.name is None):
             result = CleanDatabase(notesSession, args.name)

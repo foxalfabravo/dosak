@@ -35,8 +35,10 @@ def FindNotes():
 def EnableHeadlessDesigner(path2notes):
     notesIniFile= os.path.join(path2notes, "notes.ini")
     setIniKey(notesIniFile, "Notes","DESIGNER_AUTO_ENABLED","true") 
+    setIniKey(notesIniFile, "Notes","CREATE_R85_DATABASES","1")
 
-def SwitchUser(path2notes, sIdFile):
+def SwitchUser(sIdFile):
+    path2notes, desName = os.path.split(FindNotes())
     notesIniFile= os.path.join(path2notes, "notes.ini")
     myLog("Switching to ID file %s" % sIdFile)
     setIniKey(notesIniFile, "Notes","KeyfileName",sIdFile)

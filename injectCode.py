@@ -8,7 +8,8 @@ import sys
 import os
 
 import pythoncom
-from lotusscript import SetupNotesClient
+import datetime
+from lotusscript import SetupNotesClient,SwitchUser
 from toolbox import myLog, SetVerbosity
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -107,12 +108,17 @@ def main(argv=None): # IGNORE:C0111
         parser.add_argument("-b", "--build",   dest="build", action="store", help="build number")
         parser.add_argument("-r", "--release", dest="version", help="version string (1.2.1)")
         parser.add_argument("-s", "--source", dest="source",action="store",help="Source of code")
+        parser.add_argument("-u", "--user",    dest="user",     action="store", help="user id short filename (relative to Notes/Data)")
         parser.add_argument("-d", "--dir", dest="dir",action="store",help="directory where to apply modifications")
 
         # Process arguments
         args = parser.parse_args()
 
         SetVerbosity(args.verbose)
+        
+        if (args.user is not None):
+            SwitchUser(args.user)
+        
         notesSession = SetupNotesClient(args.verbose)
 
         result = UpgradeDesign(notesSession, args.dir,args.source)

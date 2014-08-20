@@ -10,7 +10,7 @@ from os import listdir
 
 import pythoncom
 from datetime import datetime
-from lotusscript import SetupNotesClient
+from lotusscript import SetupNotesClient,SwitchUser
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from toolbox import myLog, SetVerbosity
@@ -78,11 +78,15 @@ def main(argv=None): # IGNORE:C0111
         parser.add_argument("-r", "--release",  dest="version", help="version string (1.2.1)")
         parser.add_argument("-t", "--template", dest="template",action="store",help="lotus template name")
         parser.add_argument("-d", "--date",     dest="date",action="store",help="build date")
+        parser.add_argument("-u", "--user",    dest="user",     action="store", help="user id short filename (relative to Notes/Data)")
         parser.add_argument("-f", "--fulldir",  dest="directory", action="store", help="full directory tagging")
 
         # Process arguments
         args = parser.parse_args()
         SetVerbosity(args.verbose)
+
+        if (args.user is not None):
+            SwitchUser(args.user)
 
         notesSession = SetupNotesClient(args.verbose)
 

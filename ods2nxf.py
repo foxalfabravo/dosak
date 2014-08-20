@@ -81,12 +81,13 @@ def main(argv=None): # IGNORE:C0111
             print("Cannot run while notes is already running")
             return 2
         
+        if (args.user is not None):
+            SwitchUser(args.user)
+        
         designer = FindDesigner()
         if (designer is not None):
             path2designer, desName = os.path.split(designer)
             EnableHeadlessDesigner(path2designer)
-            if (args.user is not None):
-                SwitchUser(path2designer,args.user)
             result = ods2nxf(designer, args.src, args.dst)
         else:
             result = False;

@@ -1,17 +1,16 @@
 #!/usr/bin/python 
 # encoding: utf-8
 '''
-Short : signNotes sign templates/databases
-
+signNotes sign templates/databases
 '''
 
-import sys
+# import sys
 import os
-import pythoncom
 from os import listdir
-
-from notesapi import NotesApiWrapper
-from lotusscript import SetupNotesClient
+from notesapi import * 
+from lotusscript import *
+import pythoncom
+from toolbox import myLog, SetVerbosity
 
 
 
@@ -21,37 +20,17 @@ from argparse import RawDescriptionHelpFormatter
 __all__ = []
 __version__ = 0.1
 
-verbose = 0
-
 DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 
 notesapi = NotesApiWrapper()
-lastError =""
 
-
-def myLog(sMessage):
-    global verbose
-    
-    if verbose > 0:
-        print sMessage
-
-def GetTitle(comNotesDocument):
-    if (comNotesDocument is None):
-        return ""
-    else:
-        item = comNotesDocument.GetFirstItem("$TITLE")
-        if not(item is None):
-            title = item.Text
-        else:
-            title = "no title"
-        return title.encode('ascii', 'ignore')
 
 def SignCollection(apiDB, comDB, theCollection, title):
     theCollection.BuildCollection()
     myLog("Signing %d Docs (%s)" % (theCollection.Count, title))
-    signCount = 0
+    cleanCount = 0
 
     noteID = theCollection.GetFirstNoteId()
     comNotesDocument = comDB.GetDocumentByID(noteID)
@@ -61,7 +40,7 @@ def SignCollection(apiDB, comDB, theCollection, title):
         comNotesDocument.Sign()
         comNotesDocument.Save(True, False)
         
-        signCount = signCount +1
+        signCount = cleanCount +1
         
         noteID = theCollection.GetNextNoteId(noteID)
         if (noteID <> ""):
@@ -79,7 +58,7 @@ def SignDatabase(notesSession, sDatabaseName):
     # Get Database as a COM object
     try:
         comDB = notesSession.GetDatabase("", sDatabaseName)
-        print "Signing %s (%s)" % (sDatabaseName, comDB.Title.encode('ascii', 'ignore'))
+        myLog("Signing %s (%s)" % (sDatabaseName, comDB.Title.encode('ascii', 'ignore')))
         apiDB = notesapi.NSFDbOpen(sDatabaseName)
         nc = comDB.CreateNoteCollection(True)
         result = SignCollection(apiDB, comDB, nc, "Signing database")
@@ -95,8 +74,8 @@ def SignDatabase(notesSession, sDatabaseName):
         print (vars(error))
         print (error.args)
 
-def HandleDirectory(notesSession, sDirectory):
-    print "Handling %s directory" % sDirectory
+def SignDirectory(notesSession, sDirectory):
+    myLog("Signing %s directory" % sDirectory)
     
     # Get NTF/NSF list from directory
     included_ext = ['ntf'] ;
@@ -111,7 +90,6 @@ def HandleDirectory(notesSession, sDirectory):
     return result
         
 def main(argv=None): # IGNORE:C0111
-    global  verbose
     global  notesapi
 
     if argv is None:
@@ -126,48 +104,46 @@ def main(argv=None): # IGNORE:C0111
         parser = ArgumentParser(description="", formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument("-n", "--name",    dest="name", action="store", help="NSF/NTF to compile]")
         parser.add_argument("-f", "--fulldir",    dest="directory", action="store", help="path to compile]")
+        parser.add_argument("-u", "--user",    dest="user",     action="store", help="user id short filename (relative to Notes/Data)")
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
 
         # Process arguments
         args = parser.parse_args()
+        SetVerbosity(args.verbose)
 
-        verbose = args.verbose
-        if verbose > 0:
-            print argv
-            print("Verbose mode on")
+        if (args.user is not None):
+            SwitchUser(args.user)
 
-        notesSession = SetupNotesClient(verbose)
+        notesSession = SetupNotesClient(args.verbose)
         notesapi.NotesInitExtended(sys.argv)
 
         if not (args.name is None):
             result = SignDatabase(notesSession, args.name)
         elif (not args.directory is None):
-            result = HandleDirectory(notesSession, args.directory.strip())
+            result = SignDirectory(notesSession, args.directory.strip())
         else:
             print "Database not specified"
 
         notesapi.NotesTerm
-        myLog("Returning %d " % result)
+        return 0 if (result == True) else 1
 
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
     except Exception, e:
-        print 'Error on line {}\n'.format(sys.exc_info()[-1].tb_lineno)
-        print ("Error: %s.\n" % str(e))
-        if DEBUG or TESTRUN:
-            raise(e)
-        indent = len(program_name) * " "
-        sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
-        notesapi.NotesTerm
-        return 2
+		print 'Error on line {}\n'.format(sys.exc_info()[-1].tb_lineno)
+		print ("Error: %s.\n" % str(e))
+		if DEBUG or TESTRUN:
+			raise(e)
+		indent = len(program_name) * " "
+		sys.stderr.write(program_name + ": " + repr(e) + "\n")
+		sys.stderr.write(indent + "  for help use --help")
+		notesapi.NotesTerm
+		return 2
 
     
 if __name__ == "__main__":
     if DEBUG:
-#         sys.argv.append("-n C:\\work\\wsp.c\\a4m.122\\lotus\\English\\a4mmonitoring.ntf")
-        sys.argv.append("-f C:\\work\\wsp.c\\a4m.122\\lotus\\English")
         #sys.argv.append("-h")
         sys.argv.append("-v")
         #sys.argv.append("-r")
